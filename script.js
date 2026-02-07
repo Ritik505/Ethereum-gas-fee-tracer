@@ -74,3 +74,6 @@ async function fetchBlockGasUsed(blockNumber) {
 
 fetchGasUsed();
 setInterval(fetchGasUsed, 3000);
+
+
+ document.getElementById("year").textContent = new Date().getFullYear();
