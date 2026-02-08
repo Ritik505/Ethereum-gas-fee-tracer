@@ -38,3 +38,19 @@ h1 {
     color: #aaa;
     font-size: 14px;
 }
+
+@media (max-width: 768px) {
+    .container {
+        width: 95%;
+        padding: 15px;
+        margin: 20px auto;
+    }
+
+    .chart-container {
+        height: 700px;
+    }
+
+    h1 {
+        font-size: 20px;
+    }
+}
