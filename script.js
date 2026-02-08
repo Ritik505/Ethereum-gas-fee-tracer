@@ -1,9 +1,14 @@
 const API_URL = "https://eth-mainnet.g.alchemy.com/v2/LW_0eKUleepdRPITppJ8FTNtNVICMvw-"; 
+
 const gasData = { labels: [], gasUsed: [] };
 const ctx = document.getElementById("gasChart").getContext("2d");
 
+function isMobile() {
+    return window.innerWidth <= 768;
+}
+
 const gasChart = new Chart(ctx, {
-    type: "bar", 
+    type: "bar",
     data: {
         labels: gasData.labels,
         datasets: [
@@ -16,14 +21,27 @@ const gasChart = new Chart(ctx, {
     },
     options: {
         responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: isMobile() ? 'y' : 'x', 
         scales: {
-            x: { title: { display: true, text: "Block Number", color: "#fff" }, ticks: { color: "#fff" } },
-            y: { title: { display: true, text: "Gas Used", color: "#fff" }, ticks: { color: "#fff" } }
+            x: { 
+                title: { display: true, text: "Block Number", color: "#fff" }, 
+                ticks: { color: "#fff" } 
+            },
+            y: { 
+                title: { display: true, text: "Gas Used", color: "#fff" }, 
+                ticks: { color: "#fff" } 
+            }
         },
         plugins: {
             legend: { labels: { color: "#fff" } }
         }
     }
+});
+
+window.addEventListener('resize', () => {
+    gasChart.options.indexAxis = isMobile() ? 'y' : 'x';
+    gasChart.update();
 });
 
 async function fetchGasUsed() {
@@ -33,8 +51,10 @@ async function fetchGasUsed() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_blockNumber", params: [] })
         });
+
         const latestBlockData = await latestBlockResponse.json();
         if (!latestBlockData.result) throw new Error("Failed to fetch latest block");
+
         const latestBlock = parseInt(latestBlockData.result, 16);
 
         const gasUsedPromises = [];
@@ -43,11 +63,14 @@ async function fetchGasUsed() {
         }
 
         const gasUsedData = await Promise.all(gasUsedPromises);
+
         gasData.labels = gasUsedData.map(data => data.block);
         gasData.gasUsed = gasUsedData.map(data => data.gasUsed);
+
         gasChart.data.labels = gasData.labels;
         gasChart.data.datasets[0].data = gasData.gasUsed;
         gasChart.update();
+
     } catch (error) {
         console.error("Error fetching gas used data:", error);
     }
@@ -58,14 +81,22 @@ async function fetchBlockGasUsed(blockNumber) {
         const response = await fetch(API_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getBlockByNumber", params: ["0x" + blockNumber.toString(16), false] })
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "eth_getBlockByNumber",
+                params: ["0x" + blockNumber.toString(16), false]
+            })
         });
+
         const data = await response.json();
         if (!data.result) throw new Error("Block data not available");
+
         return {
             block: blockNumber,
             gasUsed: parseInt(data.result.gasUsed, 16)
         };
+
     } catch (error) {
         console.error("Error fetching block data:", error);
         return { block: blockNumber, gasUsed: 0 };
@@ -75,5 +106,4 @@ async function fetchBlockGasUsed(blockNumber) {
 fetchGasUsed();
 setInterval(fetchGasUsed, 3000);
 
-
- document.getElementById("year").textContent = new Date().getFullYear();
+document.getElementById("year").textContent = new Date().getFullYear();
